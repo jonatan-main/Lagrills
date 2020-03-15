@@ -1,5 +1,5 @@
 
-scale = 500000
+scale = 2
 
 class Body():
     def __init__(self, Mass, EQ_rad, pos):
@@ -23,56 +23,72 @@ class Earth(Body):
         fill(2, 124 ,188)
         ellipse(self.pos.x, self.pos.y, self.EQ_rad/scale, self.EQ_rad/scale)
         
-    def move(self):
+    def applyForce(self, force):
+        self.force = force
+        #print(force)
+        self.force.div(self.Mass)
+        self.acc.add(self.force)
+        #print(self.acc)    
+        self.move(self.acc)
+        
+    def move(self, acc):
         self.vel.add(self.acc)
         self.pos.add(self.vel)
         self.acc.mult(0)
+       # print(self.vel)
         
-    def applyForce(self, force):
-        self.force = force
-        self.acc.add(self.force)
+        
+   
+
     
         
-
-    def gravity(self, other):
-        self.mass1 = other.Mass
-        self.mass2 = self.Mass
-        self.pos1 = self.pos
-        self.pos2 = other.pos
-        self.r = self.pos1.sub(self.pos2)
+class gravity():
+    def __init__(self, body1, body2):
+        self.sun = body1
+        self.earth = body2
+        self.sMass = body1.Mass
+        self.eMass = body2.Mass
+        self.sun_pos = body1.pos
+        self.e_pos = body2.pos
+        
+        
+    def gravity(self):
+        self.r = PVector(self.e_pos.x - self.sun_pos.x, self.e_pos.y - self.sun_pos.y)
         self.rmag = self.r.mag()
-        self.r_norm = self.r.div(self.rmag)
-        
-        self.Fmag = (6.67*10**-11)*(self.mass1* self.mass2)/ self.rmag**3
-        self.gravity = self.r_norm.mult(self.Fmag)
-        
-        self.applyForce(self.gravity)
-        
+        print(self.rmag)
+        self.r_norm = self.r.normalize()
+        #print(r_norm)
+        self.Fg_mag = (6.67*10**-11) * (self.sMass * self.eMass) / self.rmag**2
+        # print(r)
+        self.Fg = self.r_norm.mult(self.Fg_mag)
+        self.earth.applyForce(self.Fg)
+        #print(Fg)
 
-Sun_initial_pos = list((2200/2, 1600/2))
-Earth_initial_pos= list((Sun_initial_pos.x, Sun_initial_pos.y - (148000000/scale)))
-Earth_initial_vel= list((0,0))
-Earth_initial_acc= list((0,0))
-global width,height
-width = 2200
-height = 1600
-Force = PVector(0,1)
+width, height = 1800 , 1200
+
+
+Sun_initial_pos = PVector(width/2, height/2)    
+Earth_initial_pos = PVector(Sun_initial_pos.x - 148/scale, height/2)
+Earth_initial_vel = PVector(0,2)
+Earth_initial_acc = PVector(0,0)
+
 
 def setup():
 
     size(width, height)
-    global Sun,earth
-    Sun = Body(1.89 , 69634000, Sun_initial_pos)
-    earth = Earth(0.4, 6800000, Earth_initial_pos, Earth_initial_vel, Earth_initial_acc)
+    global Sun, earth, container
+    Sun = Body(1000 , 60, Sun_initial_pos)
+    earth = Earth(1500, 60, Earth_initial_pos, Earth_initial_vel, Earth_initial_acc)
+    container = gravity(Sun, earth)
+    
     
 def draw():
     frameRate(60)
     background(255)
     Sun.display()
     earth.display()
-    earth.move()
-    earth.applyForce(Force)
-    earth.gravity(Sun)
+
+    container.gravity()
     
 
 
