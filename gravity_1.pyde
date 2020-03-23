@@ -9,7 +9,8 @@ print(G)
 
 
 class body(object):
-    def __init__(self, Mass, EQ_rad, position, velocity, acceleration):
+    def __init__(self, Mass, EQ_rad, position, velocity, acceleration, R, G, B):
+        self.col = list((R, G, B))
         self.Mass = Mass
         self.EQ_rad = EQ_rad
         self.pos = position
@@ -17,7 +18,7 @@ class body(object):
         self.acc = acceleration
         
     def display(self):
-        fill(2, 124 ,188)
+        fill(self.col[0], self.col[1] ,self.col[2])
         ellipse(self.pos.x, self.pos.y, self.EQ_rad*scale, self.EQ_rad*scale)
         
     def applyForce(self, f):
@@ -36,8 +37,8 @@ class body(object):
       
         
 class bodies():
-    def __init__(self, body1, body2, body3): #container method for all bodies
-        self.bodies = list((body1, body2, body3)) #list of all bodies
+    def __init__(self, body1, body2, body3, body4): #container method for all bodies
+        self.bodies = list((body1, body2, body3, body4)) #list of all bodies
 
         
         
@@ -81,31 +82,40 @@ j_r = (777920000 / AU) * scale
 j_M = 1.898e+27 / M
 jupiter_initpos = PVector(width/2 - j_r, height/2)
 j_initvel = sqrt((s_M*G)/(j_r**2))
-jupiter_initvel = PVector(0, .9)
+jupiter_initvel = PVector(0, 1.5)
 
 
 #earth initial condidtions
 e_M = 5.24e+24 / M
 e_r = 1 * scale
 Earth_initial_pos = PVector(Sun_initial_pos.x - e_r , height/2)
-Earth_initial_vel = PVector(0, 3.9)
+Earth_initial_vel = PVector(0, 3.2)
 Earth_initial_acc = PVector(0,0)
+
+#sat1 initial condidtions
+sat_M = 2000 / M
+sat_r = (777810000/ AU) * scale
+sat1_initpos = PVector(Sun_initial_pos.x - sat_r, height/2)
+sat1_initvel = PVector(0.33, 0.53)
+
 
 
 def setup():
 
     size(width, height)
-    global Sun, earth, jupiter, container
-    Sun = body(s_M , 1.1, Sun_initial_pos, sun_initial_vel, Earth_initial_acc)
-    earth = body(e_M, .05, Earth_initial_pos, Earth_initial_vel, Earth_initial_acc)
-    jupiter = body(j_M, .1, jupiter_initpos, jupiter_initvel, Earth_initial_acc)
+    global Sun, earth, jupiter, sat1, container
+    noStroke()
+    sat1 = body(sat_M, .05, sat1_initpos, sat1_initvel, Earth_initial_acc, 255, 250, 250)
+    Sun = body(s_M , .5, Sun_initial_pos, sun_initial_vel, Earth_initial_acc, 255, 234, 0)
+    earth = body(e_M, .05, Earth_initial_pos, Earth_initial_vel, Earth_initial_acc, 0, 245, 194)
+    jupiter = body(j_M, .1, jupiter_initpos, jupiter_initvel, Earth_initial_acc, 245, 90, 0)
     
-    container = bodies(Sun, earth, jupiter)
-    #background(255)
+    container = bodies(Sun, earth, jupiter, sat1)
+    #background(0)
     
 def draw():
     frameRate(60)
-    background(255)
+    background(0)
     container.display()
     container.gravity()
     
