@@ -1,9 +1,9 @@
 
-scale = 200
+scale = 100
 AU = 148000000
 G_si = 6.67e-11
 M = 1.989e30
-T = 100
+T = 365*24
 G = G_si*M*T**2/AU**3 #kg*T/pixels
 print(G)
 
@@ -18,7 +18,7 @@ class body(object):
         
     def display(self):
         fill(2, 124 ,188)
-        ellipse(self.pos.x, self.pos.y, self.EQ_rad/scale, self.EQ_rad/scale)
+        ellipse(self.pos.x, self.pos.y, self.EQ_rad*scale, self.EQ_rad*scale)
         
     def applyForce(self, f):
         self.f = f
@@ -81,14 +81,14 @@ j_r = (777920000 / AU) * scale
 j_M = 1.898e+27 / M
 jupiter_initpos = PVector(width/2 - j_r, height/2)
 j_initvel = sqrt((s_M*G)/(j_r**2))
-jupiter_initvel = PVector(0, j_initvel)
+jupiter_initvel = PVector(0, .9)
 
 
 #earth initial condidtions
 e_M = 5.24e+24 / M
 e_r = 1 * scale
 Earth_initial_pos = PVector(Sun_initial_pos.x - e_r , height/2)
-Earth_initial_vel = PVector(0, sqrt((s_M*G)/e_r**2))
+Earth_initial_vel = PVector(0, 3.9)
 Earth_initial_acc = PVector(0,0)
 
 
@@ -96,16 +96,16 @@ def setup():
 
     size(width, height)
     global Sun, earth, jupiter, container
-    Sun = body(s_M , 60, Sun_initial_pos, sun_initial_vel, Earth_initial_acc)
-    earth = body(e_M, 60, Earth_initial_pos, Earth_initial_vel, Earth_initial_acc)
-    jupiter = body(j_M, 60, jupiter_initpos, jupiter_initvel, Earth_initial_acc)
+    Sun = body(s_M , 1.1, Sun_initial_pos, sun_initial_vel, Earth_initial_acc)
+    earth = body(e_M, .05, Earth_initial_pos, Earth_initial_vel, Earth_initial_acc)
+    jupiter = body(j_M, .1, jupiter_initpos, jupiter_initvel, Earth_initial_acc)
     
     container = bodies(Sun, earth, jupiter)
-    background(255)
+    #background(255)
     
 def draw():
     frameRate(60)
-    #background(255)
+    background(255)
     container.display()
     container.gravity()
     
