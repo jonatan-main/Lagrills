@@ -1,5 +1,5 @@
 
-scale = 100
+scale = 90
 AU = 148000000
 G_si = 6.67e-11
 M = 1.989e30
@@ -7,6 +7,20 @@ T = 365*24
 G = G_si*M*T**2/AU**3 #kg*T/pixels
 print(G)
 
+def mouseClicked(): 
+    global scale
+    if scale == 90:
+        scale = 100
+    elif scale ==100:
+        scale = 120
+    elif scale == 120:
+        scale = 150
+    elif scale == 150:
+        scale = 170
+    elif scale == 170:
+        scale = 210
+    elif scale == 210:
+        scale = 90
 
 class body(object):
     def __init__(self, Mass, EQ_rad, position, velocity, acceleration, R, G, B):
@@ -20,6 +34,8 @@ class body(object):
     def display(self):
         fill(self.col[0], self.col[1] ,self.col[2])
         ellipse(self.pos.x, self.pos.y, self.EQ_rad*scale, self.EQ_rad*scale)
+        textSize(32)
+        
         
     def applyForce(self, f):
         self.f = f
@@ -44,8 +60,12 @@ class bodies():
         
 
     def display(self):
+        count=0
         for x in self.bodies:
             x.display()
+            count = count + 30
+            text("Velocity =", 10, 20+count)
+            text(sqrt(x.vel.x**2 + x.vel.y**2), 160, 20 + count)
 
         
         
@@ -56,9 +76,11 @@ class bodies():
                     continue
                 
                 self.r = PVector.sub(i.pos, j.pos) #calculate vector between object and center of system
-            
-            
+                
+                
+             
                 self.r_mag = self.r.mag()**2 #calculate magnitude and direction of vector multiplied by our scale to insert real life conditions
+                
                 self.r_norm = self.r.copy()
                 self.r_norm.normalize()
             
@@ -68,8 +90,6 @@ class bodies():
             
                 Fg = self.r_norm.mult(f_mag) #calculate Fg and apply it
                 i.applyForce(Fg)
-            
-
 width, height = 1800 , 1200
 
 #sun initial conditions
@@ -89,14 +109,14 @@ jupiter_initvel = PVector(0, 1.5)
 e_M = 5.24e+24 / M
 e_r = 1 * scale
 Earth_initial_pos = PVector(Sun_initial_pos.x - e_r , height/2)
-Earth_initial_vel = PVector(0, 3.2)
+Earth_initial_vel = PVector(0, 3.14159)
 Earth_initial_acc = PVector(0,0)
 
 #sat1 initial condidtions
 sat_M = 2000 / M
 sat_r = (777810000/ AU) * scale
-sat1_initpos = PVector(Sun_initial_pos.x - sat_r, height/2)
-sat1_initvel = PVector(0.33, 0.53)
+sat1_initpos = PVector(jupiter_initpos.x, jupiter_initpos.y + (j_r-sat_r))
+sat1_initvel = PVector(-0.9099999, 1.858000093)
 
 
 
@@ -118,6 +138,7 @@ def draw():
     background(0)
     container.display()
     container.gravity()
+    
     
 
 
