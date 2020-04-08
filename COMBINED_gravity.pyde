@@ -51,8 +51,8 @@ class body(object):
             ellipse(xhistory, yhistory, 2, 2)
         #print(len(self.history))
         
-        if len(self.history) > 250:
-            self.history.pop(0)
+        if len(self.history) >= 10:
+            self.history.pop(1)
                
                         
     def applyForce(self, f):
@@ -61,11 +61,17 @@ class body(object):
         self.acc.add(self.f)
         self.move(self.acc)
         
-    def move(self, acc):
+    def move(self, a):
+        self.acc = a
         self.history.append(self.pos.copy())
-        self.vel.add(acc)
+        
+        
+        #this is were we have to do the RK 4 Shit
+        self.vel.add(self.acc)
         self.pos.add(self.vel)
         self.acc.mult(0)
+        
+        
         
         # calculating kinetic energy (Ekin = 1/2*m*v²):
         self.Ekin = 0        
@@ -86,8 +92,8 @@ class body(object):
 
         
 class bodies():
-    def __init__(self, body1, body2, body3, body4): #container method for all bodies
-        self.bodies = list((body1, body2, body3, body4)) #list of all bodies
+    def __init__(self, body1, body2, body3, body4, body5): #container method for all bodies
+        self.bodies = list((body1, body2, body3, body4, body5)) #list of all bodies
         self.energysum = 0.0 # total energy of the system
         
         
@@ -116,10 +122,15 @@ class bodies():
             
         textSize(32)
         text("TOTAL Energy =", width/2 - 250, 100)
-        text(self.energysum * 10**9, width/2 + 50, 100)    # scale appropriately
+        text(self.energysum * 10**7, width/2 + 50, 100)    # scale appropriately
         
         #print(self.energysum)    
         #print(x.Epot+x.Ekin)
+        
+    def update(self):
+        self.gravity()
+        self.display()
+        
         
     def gravity(self):
         self.energysum = 0
@@ -174,27 +185,34 @@ Sun_initial_pos = PVector(0,0) # change in coord system
 sun_initial_vel = PVector(0,0)
 
 #jupiter initial conditions
-j_r = 5.203 # au
+j_r = 4.9465 # au
 j_M = 1.898e+27 / M
 j_p = 11.86 * 365.26 # jupiter period in days
 jupiter_initpos = PVector(j_r, 0) # change in coord system
-jupiter_initvel = PVector(0, j_r * 2 * 3.1416 / j_p)
+jupiter_initvel = PVector(0, -0.0079238502673) #au/day
 
 
 #earth initial condidtions
 e_M = 5.24e+24 / M
-e_r = 0.9832
+e_r = 0.98329
 einitvel = sqrt(((s_M*G)/((e_r)**2)))
 Earth_initial_pos = PVector(e_r , 0) # change in coord system
-Earth_initial_vel = PVector(0, .01)
-Earth_initial_vel = PVector(0, e_r * 2 * 3.1416 / 365.26)
+#Earth_initial_vel = PVector(0, .01)
+Earth_initial_vel = PVector(0, -0.0174939)
 Earth_initial_acc = PVector(0,0)
 
 #sat1 initial condidtions
-sat_M = 1000 / M
-sat_r = 0.9832899
-sat1_initpos = PVector(sat_r, 0) # change in coord system
-sat1_initvel = PVector(0, .013)
+sat_M = 3000/ M
+sat_rx = -0.98329
+satry= 0.00257357
+sat1_initpos = PVector(sat_rx, 0) # change in coord system
+sat1_initvel = PVector(0, 0.0174939)# + 0.000590254)
+
+#venus initial conditions
+venus_m = 4.8675e+24 / M
+Ven_r= 0.718
+ven_initpos = PVector(Ven_r, 0)
+ven_initvel = PVector(0, -0.020364)
 
 
 
@@ -207,12 +225,14 @@ def setup():
     Sun = body(s_M , 15, Sun_initial_pos, sun_initial_vel, Earth_initial_acc, 255, 234, 0)
     earth = body(e_M, 6, Earth_initial_pos, Earth_initial_vel, Earth_initial_acc, 0, 245, 194)
     jupiter = body(j_M, 12, jupiter_initpos, jupiter_initvel, Earth_initial_acc, 245, 90, 0)
+    venus = body(venus_m, 5, ven_initpos, ven_initvel, Earth_initial_acc, 214, 181, 50) 
+
     
-    container = bodies(Sun, earth, jupiter, sat1)
+    container = bodies(Sun, earth, jupiter, venus, sat1)
     background(0)
     
 def draw():
     frameRate(60)
     background(0)
-    container.display()
+    container.update()
     container.gravity()
