@@ -1,6 +1,6 @@
 
 # Choose 2D or 3D display
-dim = 3
+dim = 2 #D
 
 # Choose whether to display.  
  #disp = 1 will display. Won't otherwise. 
@@ -10,16 +10,21 @@ disp = 1
  #disptext = 1 will display. Won't otherwise. 
 disptext = 0
 
+
+#Choose timestep for RK4
+timestep = 0.1
+
+
 #Size of window
 fwidth, fheight = 800 , 800
 
 
 dispScale = 50                   # pixels/AU
-AU = 1.496e11                    # astronomical unit in m
+AU   = 1.496e11                    # astronomical unit in m
 G_si = 6.67e-11                  # universal gravitational constant in m³/(kg*s²)
-M = 1.989e30                     # Solar mass in kg
-T = 86400                        # seconds/day
-G = (G_si*M*(T**2))/((AU)**3)
+M    = 1.989e30                     # Solar mass in kg
+T    = 86400                        # seconds/day
+G    = (G_si*M*(T**2))/((AU)**3)
 
 
 
@@ -28,23 +33,15 @@ G = (G_si*M*(T**2))/((AU)**3)
 #----------------------------------------------------------------------------------------------------------------  
 
 class body(object):
-    def __init__(self,name, Mass, EQ_rad, distanceFromSun, inclination, velocity, acceleration, R, G, B):
-        self.col = list((R, G, B))
-        self.Mass = Mass
-        self.EQ_rad = EQ_rad
-        self.r = distanceFromSun
-        self.i = inclination
-        self.name = name   
+    def __init__(self,name, Mass, EQ_rad, distanceFromSun, inclination, velocity, R, G, B):
+        self.col = list((R, G, B));   self.Mass = Mass;        self.EQ_rad = EQ_rad; 
+        self.r = distanceFromSun;     self.i = inclination;    self.name = name   
+        self.velmag = velocity;       self.acc = PVector(.0,.0,.0)
         
-        self.pos = PVector(self.r, 0, 0)
-        self.velmag = velocity
-        self.acc = acceleration
-        self.Epot = 0
-        self.Ekin = 0
-        self.Epotlist = []
+        self.pos = PVector(self.r, 0, 0);   self.history = [self.pos] 
+        self.Epot = 0;   self.Ekin = 0;     self.Epotlist = []
      
         self.SaveData = createWriter(self.name)
-        self.history = [self.pos]
         
         self.c0 = PVector(0,0,0); self.c1 = PVector(0,0,0); self.c2 = PVector(0,0,0); self.c3 = PVector(0,0,0)
         self.k0 = PVector(0,0,0); self.k1 = PVector(0,0,0); self.k2 = PVector(0,0,0); self.k3 = PVector(0,0,0)
@@ -76,7 +73,6 @@ class body(object):
             x = self.pos.x * dispScale + width / 2.0
             y = self.pos.y * dispScale + height / 2.0
             z = self.pos.z * dispScale
-            #print(self.vel)
             
             noStroke()
             lights()
@@ -105,6 +101,7 @@ class body(object):
         self.SaveData.print(self.pos) 
         self.SaveData.print(",")
         self.SaveData.flush()                
+        
     # -----------------------------Display 2D ------------------------------------------------------        
 
     if dim == 2:     
@@ -121,12 +118,12 @@ class body(object):
 #----------------------------------------------------------------------------------------------------------------   
   
 class bodies():
-    def __init__(self, body1, body2, body3, body4, body5): #container method for all bodies
+    def __init__(self, body1, body2, body3, body4, body5):      #container method for all bodies
         self.bodies = list((body1, body2, body3, body4, body5)) #list of all bodies
-        self.energysum = 0.0 # total energy of the system
+        self.energysum = 0.0                                    # total energy of the system
         
         
-#------------------------------- Display stuff ---------------------------------------------------------
+    #------------------------------- Display stuff ---------------------------------------------------------
     if disp == 1:
         def display(self):
             count=0
@@ -142,11 +139,11 @@ class bodies():
                     
                     textSize(32)
                     text("kinetic Energy =", 10, 2*20+(len(self.bodies)*30)+count)  
-                    text(x.Ekin * 10**10, 270, 2*20+(len(self.bodies)*30)+count)     # scale appropriately
+                    text(x.Ekin * 10**10, 270, 2*20+(len(self.bodies)*30)+count)              # scale appropriately
                     
                     textSize(32)
                     text("potential Energy =", 10, 3*20+(2*len(self.bodies)*30)+count)
-                    text(x.Epot *10**10, 300, 3*20+(2*len(self.bodies)*30)+count)    # scale appropriately
+                    text(x.Epot *10**10, 300, 3*20+(2*len(self.bodies)*30)+count)             # scale appropriately
                     
                     textSize(32)
                     text("total Energy =", 10, 4*20+(3*len(self.bodies)*30)+count)
@@ -169,11 +166,11 @@ class bodies():
             for j in self.bodies:
                 if j == i:
                     continue
-                r = i.pos - j.pos
-                r_mag2 = r.mag()**2
-                r_norm = r.copy().normalize()
-                f_mag = - G * i.Mass * j.Mass / r_mag2
-                i.k0 += f_mag * r_norm / i.Mass
+                r       = i.pos - j.pos
+                r_mag2  = r.mag()**2
+                r_norm  = r.copy().normalize()
+                f_mag   = - G * i.Mass * j.Mass / r_mag2
+                i.k0   += f_mag * r_norm / i.Mass
                 self.energysum += -G * i.Mass * j.Mass / r.mag()
 
             self.energysum += i.Mass * i.vel.mag()**2 / 2
@@ -186,11 +183,11 @@ class bodies():
             for j in self.bodies:
                 if j == i:
                     continue
-                r = (i.pos + tstep/2*i.c0) - (j.pos + tstep/2*j.c0)
-                r_mag2 = r.mag()**2
-                r_norm = r.copy().normalize()
-                f_mag = - G * i.Mass * j.Mass / r_mag2
-                i.k1 += f_mag * r_norm / i.Mass
+                r       = (i.pos + tstep/2*i.c0) - (j.pos + tstep/2*j.c0)
+                r_mag2  = r.mag()**2
+                r_norm  = r.copy().normalize()
+                f_mag   = - G * i.Mass * j.Mass / r_mag2
+                i.k1   += f_mag * r_norm / i.Mass
                 
         #-------------------------- c2 & k2 ---------------------------------------
         for i in self.bodies:
@@ -200,11 +197,11 @@ class bodies():
             for j in self.bodies:
                 if j == i:
                     continue
-                r = (i.pos + tstep/2*i.c1) - (j.pos + tstep/2*j.c1)
-                r_mag2 = r.mag()**2
-                r_norm = r.copy().normalize()
-                f_mag = - G * i.Mass * j.Mass / r_mag2
-                i.k2 += f_mag * r_norm / i.Mass
+                r       = (i.pos + tstep/2*i.c1) - (j.pos + tstep/2*j.c1)
+                r_mag2  = r.mag()**2
+                r_norm  = r.copy().normalize()
+                f_mag   = - G * i.Mass * j.Mass / r_mag2
+                i.k2   += f_mag * r_norm / i.Mass
                 
         #-------------------------- c3 & k3 ---------------------------------------
         for i in self.bodies:
@@ -214,11 +211,11 @@ class bodies():
             for j in self.bodies:
                 if j == i:
                     continue
-                r = (i.pos + tstep*i.c2) - (j.pos + tstep*j.c2)
-                r_mag2 = r.mag()**2
-                r_norm = r.copy().normalize()
-                f_mag = - G * i.Mass * j.Mass / r_mag2
-                i.k3 += f_mag * r_norm / i.Mass
+                r       = (i.pos + tstep*i.c2) - (j.pos + tstep*j.c2)
+                r_mag2  = r.mag()**2
+                r_norm  = r.copy().normalize()
+                f_mag   = - G * i.Mass * j.Mass / r_mag2
+                i.k3   += f_mag * r_norm / i.Mass
         
         #----------------- weighted average ------------------
         for i in self.bodies:
@@ -229,12 +226,11 @@ class bodies():
                       
     def update(self):
         for i in range(10):
-            self.rk4Step(0.1)
+            self.rk4Step(timestep)       # Integration method RK4
         if disp == 1:
-            self.display()
-        print(self.energysum)
-        for i in self.bodies: 
-            i.printer()
+            self.display()          # Display system
+        for i in self.bodies:       
+            i.printer()             # Save data in .txt
 #------------------------------------------------------------------------------------------------------------------------------------------
 # -------------------------------------- Initial conditions ---------------------------------------------------------------------
 #------------------------------------------------------------------------------------------------------------------------------------------
@@ -244,39 +240,39 @@ class bodies():
 InitAcc = PVector (0,0,0)
 
 #--------------- sun initial conditions ----------------
-SunM = 1.989e+30 / M     # mass
-Sunr = 0.0                 # distance from Sun
-SunI = 0.0               # orbit inclination to ecliptic in degrees
-SunVel = 0.0
+SunM     = 1.989e+30 / M       # mass
+Sunr     = 0.0                 # distance from Sun
+SunI     = 0.0                 # orbit inclination to ecliptic in degrees
+SunVel   = 0.0
 
 #--------------- jupiter initial conditions ---------------
 
-Jupr = 4.9465          # distance from Sun in AU
-JupM = 1.898e+27 / M   # mass
-JupP = 11.86 * 365.26  # jupiter period in days
-JupI = 1.304           # orbit inclination to ecliptic in degrees
-JupVel = -0.0079238502673 # AU/day
+Jupr     = 4.9465              # distance from Sun in AU
+JupM     = 1.898e+27 / M       # mass
+JupP     = 11.86 * 365.26      # jupiter period in days
+JupI     = 1.304               # orbit inclination to ecliptic in degrees
+JupVel   = -0.0079238502673    # AU/day
 
 
 #--------------- earth initial condidtions ---------------
-EarthM = 5.24e+24 / M      # mass
-Earthr = 0.98329           # distance from Sun
-EarthI = 0.0               # orbit inclination to ecliptic in degrees
+EarthM   = 5.24e+24 / M        # mass
+Earthr   = 0.98329             # distance from Sun
+EarthI   = 0.0                 # orbit inclination to ecliptic in degrees
 einitvel = sqrt(((SunM*G)/((Earthr)**2)))
 EarthVel = -0.0174939
 
 #--------------- venus initial conditions ---------------
-VenM = 4.8675e+24 / M    # mass
-Venr = 0.718             # distance from Sun in AU
-VenI = 3.39              # orbit inclination to ecliptic in degrees
-VenVel =  -0.020364
+VenM     = 4.8675e+24 / M      # mass
+Venr     = 0.718               # distance from Sun in AU
+VenI     = 3.39                # orbit inclination to ecliptic in degrees
+VenVel   = -0.020364
 
 
 # --------------- sat1 initial condidtions ---------------
-sat1M = 3000/ M         # mass
-sat1r = -0.98329        # distance from Sun in AU
-sat1I = 0.0             # orbit inclination to ecliptic in degrees
-sat1Vel = 0.0174939     # + 0.000590254)
+sat1M    = 3000/ M             # mass
+sat1r    = -0.98329            # distance from Sun in AU
+sat1I    = 0.0                 # orbit inclination to ecliptic in degrees
+sat1Vel  = 0.0174939           # + 0.000590254)
 
 
 
@@ -290,24 +286,23 @@ def setup():
     global Sun, earth, jupiter, sat1, container, dim, disp
     noStroke()
     
-   #body    =     (txtPos        mass    rad   dist    incl    initVel   initAcc  R    G    B  )
-    sat1    = body("nSat1.txt" , sat1M ,  4 ,  sat1r,  sat1I,  sat1Vel,  InitAcc, 255, 250, 250)
-    Sun     = body("nSun.txt"  , SunM  ,  15,  Sunr,   SunI,   SunVel,   InitAcc, 255, 234, 0  )
-    earth   = body("nEarth.txt", EarthM,  6 ,  Earthr, EarthI, EarthVel, InitAcc, 0,   245, 194)
-    jupiter = body("nJup.txt"  , JupM  ,  12,  Jupr,   JupI,   JupVel,   InitAcc, 245, 90,  0  )
-    venus   = body("nVen.txt"  , VenM  ,  5 ,  Venr,   VenI,   VenVel,   InitAcc, 214, 181, 50 ) 
+   #body    =     (txtPos        mass    rad   dist    incl    initVel      R    G    B  )
+    sat1    = body("nSat1.txt" , sat1M ,  4 ,  sat1r , sat1I  , sat1Vel  ,  255, 250, 250)
+    Sun     = body("nSun.txt"  , SunM  ,  15,  Sunr  , SunI   , SunVel   ,  255, 234, 0  )
+    Earth   = body("nEarth.txt", EarthM,  6 ,  Earthr, EarthI , EarthVel ,  0,   245, 194)
+    Jupiter = body("nJup.txt"  , JupM  ,  12,  Jupr  , JupI   , JupVel   ,  245, 90,  0  )
+    Venus   = body("nVen.txt"  , VenM  ,  5 ,  Venr  , VenI   , VenVel   ,  214, 181, 50 ) 
     
-    container = bodies(Sun, earth, jupiter, venus, sat1)
+    container = bodies(Sun, Earth, Jupiter, Venus, sat1)
     background(0)
     frameRate(60)
     
 def draw():
-    print(Sun.Mass)
-    print(Sun.pos)
     #background(0)
     container.update()
     
 
+#---------------------------------- Scaling the window ----------------------------
 def mouseClicked(): # change to use dispScale and have a fall through
     background(0)
     global dispScale
