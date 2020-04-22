@@ -10,21 +10,14 @@ disp = 1
  #disptext = 1 will display. Won't otherwise. 
 disptext = 0
 
-
 #Choose timestep for RK4
 timestep = 0.1
-
 
 #Size of window
 fwidth, fheight = 800 , 800
 
 
 dispScale = 50                   # pixels/AU
-AU   = 1.496e11                    # astronomical unit in m
-G_si = 6.67e-11                  # universal gravitational constant in m³/(kg*s²)
-M    = 1.989e30                     # Solar mass in kg
-T    = 86400                        # seconds/day
-G    = (G_si*M*(T**2))/((AU)**3)
 
 
 
@@ -33,25 +26,23 @@ G    = (G_si*M*(T**2))/((AU)**3)
 #----------------------------------------------------------------------------------------------------------------  
 
 class body(object):
-    def __init__(self,name, Mass, EQ_rad, distanceFromSun, inclination, velocity, R, G, B):
-        self.col = list((R, G, B));   self.Mass = Mass;        self.EQ_rad = EQ_rad; 
-        self.r = distanceFromSun;     self.i = inclination;    self.name = name   
-        self.velmag = velocity;       self.acc = PVector(.0,.0,.0)
+    def __init__(self, name, Mass, rad, distanceFromSun, inclination, velocity, R, G, B):
+        self.col    = list((R, G, B));   self.Mass = Mass       ;      self.EQ_rad = rad
+        self.r      = distanceFromSun;   self.i    = inclination;      self.name   = name   
+        self.velmag = velocity       ;   self.acc  = vec0       ;      self.SaveData = createWriter(self.name)
         
-        self.pos = PVector(self.r, 0, 0);   self.history = [self.pos] 
-        self.Epot = 0;   self.Ekin = 0;     self.Epotlist = []
+        self.pos  = PVector(self.r, 0, 0);   self.history = [self.pos] 
+        self.Epot = 0;      self.Ekin = 0;   self.Epotlist = []
      
-        self.SaveData = createWriter(self.name)
-        
         self.c0 = PVector(0,0,0); self.c1 = PVector(0,0,0); self.c2 = PVector(0,0,0); self.c3 = PVector(0,0,0)
         self.k0 = PVector(0,0,0); self.k1 = PVector(0,0,0); self.k2 = PVector(0,0,0); self.k3 = PVector(0,0,0)
          
     #------------------------ Calculate velocity with inclination -----------------------------------------------    
         self.irads = radians(self.i)
-        self.Vx = 0.0
-        self.Vy = self.velmag * cos(self.irads)
-        self.Vz = self.velmag * sin(self.irads)
-        self.vel = PVector(self.Vx, self.Vy, self.Vz)
+        self.Vx    = 0.0
+        self.Vy    = self.velmag * cos(self.irads)
+        self.Vz    = self.velmag * sin(self.irads)
+        self.vel   = PVector(self.Vx, self.Vy, self.Vz)
         
         
     # ------------------------ calculation of initial position: ------------------------------
@@ -74,12 +65,7 @@ class body(object):
             y = self.pos.y * dispScale + height / 2.0
             z = self.pos.z * dispScale
             
-            noStroke()
-            lights()
-            pushMatrix()
-            translate(x, y, z)
-            sphere(self.EQ_rad)
-            popMatrix()
+            noStroke();  lights();   pushMatrix();  translate(x, y, z);   sphere(self.EQ_rad);   popMatrix()
             
             for i in self.history:
                 fill(self.col[0], self.col[1] ,self.col[2])
@@ -87,10 +73,7 @@ class body(object):
                 yhistory = i.y * dispScale + height / 2.0
                 zhistory = i.z * dispScale
                 
-                pushMatrix()
-                translate(xhistory, yhistory, zhistory)
-                sphere(1)
-                popMatrix()
+                pushMatrix();   sphere(1);    popMatrix();     translate(xhistory, yhistory, zhistory)  
             
             if len(self.history) >= 10:
                 self.history.pop(1) 
@@ -98,12 +81,9 @@ class body(object):
     
     # ---------------------------- Printing position --------------------------------------------------
     def printer(self):
-        self.SaveData.print(self.pos) 
-        self.SaveData.print(",")
-        self.SaveData.flush()                
+        self.SaveData.print(self.pos);      self.SaveData.print(",");       self.SaveData.flush()                
         
     # -----------------------------Display 2D ------------------------------------------------------        
-
     if dim == 2:     
         def display(self):
             fill(self.col[0], self.col[1] ,self.col[2])
@@ -111,8 +91,7 @@ class body(object):
             y = self.pos.y * dispScale + height / 2.0
     
             ellipse(x, y, self.EQ_rad, self.EQ_rad)
-
-        
+    
 #----------------------------------------------------------------------------------------------------------------   
 # ----------------------------- Container class -----------------------------------------------------------------    
 #----------------------------------------------------------------------------------------------------------------   
@@ -128,8 +107,7 @@ class bodies():
         def display(self):
             count=0
             for x in self.bodies:
-                x.display()
-                            
+                x.display()                        
                 count = count + 30
                 #------------------------------- Display text ---------------
                 if disptext == 1:
@@ -150,140 +128,108 @@ class bodies():
                     text((x.Epot+x.Ekin) *10**10, 230, 4*20+(3*len(self.bodies)*30)+count)    # scale appropriately
                 
             textSize(32)
-            text("TOTAL Energy =", width/2 - 250, 100)
-            text(self.energysum * 10**7, width/2 + 50, 100)    # scale appropriately
-            
-
+            text("TOTAL Energy =",       width/2 - 250, 100)
+            text(self.energysum * 10**7, width/2 + 50,  100)    # scale appropriately
+    
+#-------------------------------------- gravity --------------------------------
+    def gravity(self, body1, body2):
+        bi      = body1;                    bj      = body2
+        r       = bi.pos - bj.pos;          r_mag2  = r.mag()**2;
+        r_norm  = r.copy().normalize();     f_mag   = - G * bi.Mass * bj.Mass / r_mag2
+        
+        idk     = f_mag * r_norm / bi.Mass; e_sum   =  -G * bi.Mass * bj.Mass / r.mag()
+        return    idk, e_sum, r.mag()
+        #grav  [0]   [1]    [2]       
+       
+    
 #------------------------------------------- RK4 integration ----------------------------------------------
     def rk4Step(self, tstep):
         self.energysum = 0.0
         #-------------------------- c0 & k0 ---------------------------------------
         for i in self.bodies:
             i.c0 = i.vel
-
-
             i.k0 = PVector(.0,.0,.0)
             for j in self.bodies:
                 if j == i:
                     continue
-                r       = i.pos - j.pos
-                r_mag2  = r.mag()**2
-                r_norm  = r.copy().normalize()
-                f_mag   = - G * i.Mass * j.Mass / r_mag2
-                i.k0   += f_mag * r_norm / i.Mass
-                self.energysum += -G * i.Mass * j.Mass / r.mag()
-
+                grav = self.gravity(i,j)               
+                i.k0   += grav[0]
+                self.energysum += grav[1]
             self.energysum += i.Mass * i.vel.mag()**2 / 2
             
         #-------------------------- c1 & k1 ---------------------------------------
         for i in self.bodies:
             i.c1 = i.vel + tstep/2*i.k0
-
             i.k1 = PVector(.0,.0,.0)
             for j in self.bodies:
                 if j == i:
                     continue
-                r       = (i.pos + tstep/2*i.c0) - (j.pos + tstep/2*j.c0)
-                r_mag2  = r.mag()**2
-                r_norm  = r.copy().normalize()
-                f_mag   = - G * i.Mass * j.Mass / r_mag2
-                i.k1   += f_mag * r_norm / i.Mass
+                grav = self.gravity(i,j)
+                i.k1 += grav[0]
                 
         #-------------------------- c2 & k2 ---------------------------------------
         for i in self.bodies:
             i.c2 = i.vel + tstep/2*i.k1
-
             i.k2 = PVector(.0,.0,.0)
             for j in self.bodies:
                 if j == i:
                     continue
-                r       = (i.pos + tstep/2*i.c1) - (j.pos + tstep/2*j.c1)
-                r_mag2  = r.mag()**2
-                r_norm  = r.copy().normalize()
-                f_mag   = - G * i.Mass * j.Mass / r_mag2
-                i.k2   += f_mag * r_norm / i.Mass
-                
+                grav = self.gravity(i,j)
+                i.k2 += grav[0]          
+                      
         #-------------------------- c3 & k3 ---------------------------------------
         for i in self.bodies:
             i.c3 = i.vel + tstep*i.k2
-
             i.k3 = PVector(.0,.0,.0)
             for j in self.bodies:
                 if j == i:
                     continue
-                r       = (i.pos + tstep*i.c2) - (j.pos + tstep*j.c2)
-                r_mag2  = r.mag()**2
-                r_norm  = r.copy().normalize()
-                f_mag   = - G * i.Mass * j.Mass / r_mag2
-                i.k3   += f_mag * r_norm / i.Mass
-        
+                grav = self.gravity(i,j)
+                i.k3 += grav[0]
+                
         #----------------- weighted average ------------------
         for i in self.bodies:
             i.pos += tstep/6*(i.c0 + 2*i.c1 + 2*i.c2 + i.c3)
             i.vel += tstep/6*(i.k0 + 2*i.k1 + 2*i.k2 + i.k3)
- 
+
     # ---------------------------------- Update function ---------------------------------------------
                       
     def update(self):
         for i in range(10):
             self.rk4Step(timestep)       # Integration method RK4
         if disp == 1:
-            self.display()          # Display system
+            self.display()               # Display system
         for i in self.bodies:       
-            i.printer()             # Save data in .txt
+            i.printer()                  # Save data in .txt file
+            
 #------------------------------------------------------------------------------------------------------------------------------------------
 # -------------------------------------- Initial conditions ---------------------------------------------------------------------
 #------------------------------------------------------------------------------------------------------------------------------------------
 
+#---------------- Grav constant --------------------------
+#AU in meter          solar mass in kg      #sec/day         # universal gravitational constant in m³/(kg*s²)
+AU = 1.496e11;        M = 1.989e30;         T = 86400;       G_si = 6.67e-11;
+G  = (G_si*M*(T**2))/((AU)**3)       #gravitational constant
 
+#----------------  Planets   ----------------------
+#planet    mass          ;    dist from sun   ;   inclination   ;    velocity
+SunM     = 1.989e+30 / M ;    Sunr   = 0.0    ;   SunI   = 0.0  ;    SunVel   = 0.0                       #Sun  
+VenM     = 4.8675e+24 / M;    Venr   = 0.718  ;   VenI   = 3.39 ;    VenVel   = -0.020364                 #Venus
+EarthM   = 5.24e+24 / M  ;    Earthr = 0.98329;   EarthI = 0.0  ;    EarthVel = -0.0174939                #Earth
+JupM     = 1.898e+27 / M ;    Jupr   = 4.9465 ;   JupI   = 1.304;    JupVel   = -0.0079238502673          #Jupiter
 
-InitAcc = PVector (0,0,0)
+#--------------------   Satellites ----------------------------
+#satnr     mass          ;    dist from sun    ;   inclination   ;    velocity
+sat1M    = 3000/ M       ;    sat1r  = -0.98329;   sat1I  = 0.0  ;    sat1Vel  = 0.0174939;                                           #sat 1 vel(?): + 0.000590254)
 
-#--------------- sun initial conditions ----------------
-SunM     = 1.989e+30 / M       # mass
-Sunr     = 0.0                 # distance from Sun
-SunI     = 0.0                 # orbit inclination to ecliptic in degrees
-SunVel   = 0.0
-
-#--------------- jupiter initial conditions ---------------
-
-Jupr     = 4.9465              # distance from Sun in AU
-JupM     = 1.898e+27 / M       # mass
-JupP     = 11.86 * 365.26      # jupiter period in days
-JupI     = 1.304               # orbit inclination to ecliptic in degrees
-JupVel   = -0.0079238502673    # AU/day
-
-
-#--------------- earth initial condidtions ---------------
-EarthM   = 5.24e+24 / M        # mass
-Earthr   = 0.98329             # distance from Sun
-EarthI   = 0.0                 # orbit inclination to ecliptic in degrees
-einitvel = sqrt(((SunM*G)/((Earthr)**2)))
-EarthVel = -0.0174939
-
-#--------------- venus initial conditions ---------------
-VenM     = 4.8675e+24 / M      # mass
-Venr     = 0.718               # distance from Sun in AU
-VenI     = 3.39                # orbit inclination to ecliptic in degrees
-VenVel   = -0.020364
-
-
-# --------------- sat1 initial condidtions ---------------
-sat1M    = 3000/ M             # mass
-sat1r    = -0.98329            # distance from Sun in AU
-sat1I    = 0.0                 # orbit inclination to ecliptic in degrees
-sat1Vel  = 0.0174939           # + 0.000590254)
-
-
-
-
+vec0 = PVector(.0,.0,.0)
 #------------------------------------------------------------------------------------------------------------------------------------------
 #---------------------------------------------------------------Setup and draw ------------------------------------------------------------
 #------------------------------------------------------------------------------------------------------------------------------------------
-def setup():
 
+def setup():
     size(fwidth, fheight, P3D)
-    global Sun, earth, jupiter, sat1, container, dim, disp
+    global Sun, earth, jupiter, sat1, container, vec0
     noStroke()
     
    #body    =     (txtPos        mass    rad   dist    incl    initVel      R    G    B  )
@@ -294,6 +240,7 @@ def setup():
     Venus   = body("nVen.txt"  , VenM  ,  5 ,  Venr  , VenI   , VenVel   ,  214, 181, 50 ) 
     
     container = bodies(Sun, Earth, Jupiter, Venus, sat1)
+    
     background(0)
     frameRate(60)
     
@@ -307,7 +254,7 @@ def mouseClicked(): # change to use dispScale and have a fall through
     background(0)
     global dispScale
     if dispScale == 90:
-        dispScale = 100
+        dispScale = 100; 
     elif dispScale == 100:
         dispScale = 120
     elif dispScale == 120:
@@ -320,3 +267,8 @@ def mouseClicked(): # change to use dispScale and have a fall through
         dispScale = 90
     else:
         dispScale = 100
+        
+        
+#-----------idk??------------
+JupP = 11.86 * 365.26      # jupiter period in days
+einitvel = sqrt(((SunM*G)/((Earthr)**2)))
